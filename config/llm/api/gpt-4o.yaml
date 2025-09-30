@@ -1,0 +1,8 @@
+name: gpt-4o
+env_base_url: null
+full_name: gpt-4o
+id: gpt-4o
+temperature: 0.0
+num_proc: 35
+env_key: OPENAI_API_KEY
+max_tokens: 1000

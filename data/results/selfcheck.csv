@@ -1,0 +1,15 @@
+method_family,method_type,Sentence-level (AUC-PR)-NonFact,Sentence-level (AUC-PR)-NonFact*,Sentence-level (AUC-PR)-Factual,Passage-level (Corr.)-Pearson,Passage-level (Corr.)-Spearman
+GPT-3 (text-davinci-003)’s probabilities,Avg($-$log$p$),83.21,38.89,53.97,57.04,53.93
+GPT-3 (text-davinci-003)’s probabilities,Avg($\mathcal{H}$)$^\dagger$,80.73,37.09,52.07,55.52,50.87
+GPT-3 (text-davinci-003)’s probabilities,Max($-$log$p$),87.51,35.88,50.46,57.83,55.69
+GPT-3 (text-davinci-003)’s probabilities,Max($\mathcal{H}$)$^\dagger$,85.75,32.43,50.27,52.48,49.55
+LLaMA-30B’s probabilities,Avg($-$log$p$),75.43,30.32,41.29,21.72,20.2
+LLaMA-30B’s probabilities,Avg($\mathcal{H}$),80.8,39.01,42.97,33.8,39.49
+LLaMA-30B’s probabilities,Max($-$log$p$),74.01,27.14,31.08,-22.83,-22.71
+LLaMA-30B’s probabilities,Max($\mathcal{H}$),80.92,37.32,37.9,35.57,38.94
+SelfCheckGPT,w/ BERTScore,81.96,45.96,44.23,58.18,55.9
+SelfCheckGPT,w/ QA,84.26,40.06,48.14,61.07,59.29
+SelfCheckGPT,w/ Unigram (max),85.63,41.04,58.47,64.71,64.91
+SelfCheckGPT,w/ NLI,92.5,45.17,66.08,74.14,73.78
+SelfCheckGPT,w/ Prompt,93.42,53.19,67.09,78.32,78.3
+Random,,72.96,29.72,27.04,,

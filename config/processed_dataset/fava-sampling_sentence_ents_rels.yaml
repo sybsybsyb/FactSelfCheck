@@ -1,0 +1,6 @@
+defaults:
+  - original_dataset: ../../dataset/fava-sampling
+
+ents_rels_path: data/entities_relationships/fava-sampling/response_column/${llm.name}
+
+restricted_by_column: response_column

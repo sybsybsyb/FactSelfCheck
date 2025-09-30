@@ -1,0 +1,18 @@
+{
+    "sentence_best_relative_results": {
+        "col": "sent_score_attn_score_relative_layer_41",
+        "layer": 41.0,
+        "version": "relative",
+        "auc_hallucination": 83.8472188149411,
+        "auc_factuality": 51.62370243526435,
+        "auc_mean": 67.73546062510272
+    },
+    "sentence_best_absolute_results": {
+        "col": "sent_score_attn_score_absolute_layer_42",
+        "layer": 42.0,
+        "version": "absolute",
+        "auc_hallucination": 77.94506045766268,
+        "auc_factuality": 42.227280367961015,
+        "auc_mean": 60.086170412811846
+    }
+}

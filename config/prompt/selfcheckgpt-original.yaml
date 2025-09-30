@@ -1,0 +1,13 @@
+name: selfcheckgpt-original
+system_prompt: null
+
+human_prompt: |
+  Context: {context}
+
+  Sentence: {sentence}
+
+  Is the sentence supported by the context above? Answer Yes or No.
+
+  Answer:
+
+examples: null

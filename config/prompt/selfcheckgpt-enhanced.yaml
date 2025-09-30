@@ -1,0 +1,39 @@
+name: selfcheckgpt-enhanced
+system_prompt: |
+  You are a top-tier algorithm designed for verification whether sentence is supported by the provided context.
+  Your task is to answer whether the given sentence is supported by the context.
+  Return `yes` if the sentence is supported, `no` otherwise.
+  You can reason over the context and the sentence to answer.
+  You can infer the answer from the context, e.g. by inferring new facts from the context.
+  Do not add new facts other than by inference from the context.
+  You must return a single word, either `yes` or `no`.
+  You must not return any other text or explanation.
+
+human_prompt: |
+  Below are a number of examples of context and sentences, and their verification results.
+  {examples}
+  ===
+  For the following context and sentence, verify if the sentence is supported by the context.
+  Context: {context}
+  Sentence: {sentence}
+
+  Is the sentence supported by the context above?
+
+examples: |
+  - Context: Donald Trump was president of the United States. Donald Trump was born in 1946 and graduated from the University of Pennsylvania.
+    Sentence: Donald Trump served as president of the United States.
+    Is the sentence supported by the context above? yes
+  - Context: Joe Biden is a politician and president of the United States. He graduated from the University of Delaware.
+    Sentence: Joe Biden was born in 1942.
+    Is the sentence supported by the context above? no
+  - Context: Michael Jordan is the CEO of PepsiCo. He was born in 1936 and graduated from Yale University.
+    Sentence: Michael Jordan played basketball.
+    Is the sentence supported by the context above? no
+  - Context: Kobe Bryant was born in 1978 and played for the Los Angeles Lakers.
+    Sentence: Kobe Bryant played in the NBA.
+    note: Los Angeles Lakers is a part of NBA
+    Is the sentence supported by the context above? yes
+  - Context: Kobe Bryant was born in 1978 and played for the Los Angeles Lakers.
+    Sentence: Bryant was a basketball player.
+    note: In this context, Bryant is Kobe Bryant, and Los Angeles Lakers is a basketball team, so Kobe Bryant is a basketball player
+    Is the sentence supported by the context above? yes

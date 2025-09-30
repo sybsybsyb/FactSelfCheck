@@ -1,0 +1,9 @@
+name: wiki_bio
+path: potsawee/wiki_bio_gpt3_hallucination
+source_column: wiki_bio_text
+response_column: gpt3_text
+response_sentences_column: gpt3_sentences
+samples_column: gpt3_text_samples
+annotations_column: annotation
+test_split_name: evaluation
+local: false

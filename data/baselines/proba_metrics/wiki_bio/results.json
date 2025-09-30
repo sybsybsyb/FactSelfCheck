@@ -1,0 +1,26 @@
+[
+    {
+        "col": "sent_score_mean_neg_log_probs",
+        "auc_hallucination": 79.20265279192833,
+        "auc_factuality": 44.10589662789784,
+        "auc_mean": 61.65427470991308
+    },
+    {
+        "col": "sent_score_max_neg_log_probs",
+        "auc_hallucination": 78.40898358680106,
+        "auc_factuality": 33.589065186347945,
+        "auc_mean": 55.999024386574504
+    },
+    {
+        "col": "sent_score_mean_entropies",
+        "auc_hallucination": 79.02250178047929,
+        "auc_factuality": 49.17683593012087,
+        "auc_mean": 64.09966885530008
+    },
+    {
+        "col": "sent_score_max_entropies",
+        "auc_hallucination": 82.55712908417307,
+        "auc_factuality": 41.80285211057324,
+        "auc_mean": 62.179990597373155
+    }
+]

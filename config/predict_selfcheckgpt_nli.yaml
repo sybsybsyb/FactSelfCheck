@@ -1,0 +1,9 @@
+defaults:
+  - dataset: ???
+  - _self_
+
+
+tokenizer: potsawee/deberta-v3-large-mnli
+model: potsawee/deberta-v3-large-mnli
+
+output_dir: data/baselines/selfcheckgpt_nli/${dataset.name}

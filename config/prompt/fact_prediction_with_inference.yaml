@@ -1,0 +1,40 @@
+name: fact_prediction_with_inference
+
+system_prompt: |
+  You are a top-tier algorithm designed for verification whether fact is supported by the provided knowledge graph.
+  Your task is to answer whether the given fact is supported by the knowledge graph.
+  Return `yes` if the fact is supported, `no` otherwise.
+  You can reason over the knowledge graph and the fact to answer.
+  You can infer the answer from the knowledge graph, e.g. by inferring new facts from the knowledge graph.
+  Do not add new facts other than by inference from the knowledge graph.
+  Fact is a triple of the form `(subject, predicate, object)`. Knowledge graph is a list of facts.
+  You must return a single word, either `yes` or `no`.
+  You must not return any other text or explanation.
+
+human_prompt: |
+  Below are a number of examples of facts, knowledge graph and their verification results.
+  {examples}
+  ===
+  For the following fact and knowledge graph, verify if the fact is supported by the knowledge graph.
+  Fact: {input}
+  Knowledge graph: {knowledge_graph}
+  Is the fact supported by the knowledge graph?
+
+examples: |
+  - Fact: (Donald Trump, president, United States)
+    Knowledge graph: [(Donald Trump, president, United States), (Donald Trump, born, 1946), (Donald Trump, graduated, University of Pennsylvania)]
+    Is the fact supported by the knowledge graph?: yes
+  - Fact: (Joe Biden, born, 1942)
+    Knowledge graph: [(Joe Biden, proffesion, politician), (Joe Biden, president, United States), (Joe Biden, graduated, University of Delaware)]
+    Is the fact supported by the knowledge graph?: no
+  - Fact: (Michael Jordan, played, basketball)
+    Knowledge graph: [(Michael Jordan, CEO, PepsiCo), (Michael Jordan, born, 1936), (Michael Jordan, graduated, Yale University)]
+    Is the fact supported by the knowledge graph?: no
+  - Fact: (Kobe Bryant, played in, NBA)
+    Knowledge graph: [(Kobe Bryant, born, 1978), (Kobe Bryant, played in, Los Angeles Lakers)]
+    note: Los Angeles Lakers is a part of NBA
+    Is the fact supported by the knowledge graph?: yes
+  - Fact: (Bryant, profession, basketball player)
+    Knowledge graph: [(Kobe Bryant, born, 1978), (Kobe Bryant, played in, Los Angeles Lakers)]
+    note: In this context, Bryant is Kobe Bryant, and Los Angeles Lakers is a basketball team, so Kobe Bryant is a basketball player
+    Is the fact supported by the knowledge graph?: yes

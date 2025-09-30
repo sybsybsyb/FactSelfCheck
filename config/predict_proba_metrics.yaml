@@ -1,0 +1,8 @@
+defaults:
+  - dataset: ???
+  - llm: ???
+  - _self_
+
+split: ${dataset.test_split_name}
+batch_size: 1
+output_dir: data/baselines/proba_metrics/${dataset.name}/${llm.name}

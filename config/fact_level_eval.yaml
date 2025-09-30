@@ -1,0 +1,9 @@
+defaults:
+  - processed_dataset: wiki_bio_sentence_fact_level_eval
+  - llm: api/Llama-3.1-70B-Instruct
+  - _self_
+
+predictor: fact_occurrence
+fact_prompt_name: fact_prediction_with_inference
+fact_text_prompt_name: fact_text_prediction_with_inference
+selfcheckgpt_prompt_name: selfcheckgpt-original

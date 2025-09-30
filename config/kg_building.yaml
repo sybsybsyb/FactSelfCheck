@@ -1,0 +1,17 @@
+defaults:
+  - processed_dataset: ???
+  - kg_builder: langchain
+  - llm: api/Llama-3.1-70B-Instruct
+  - prompt: modified_langchain_csv
+  - _self_
+
+column: ???
+level: ???
+
+restricted: true
+restricted_by_column: ???
+restrict_relationships: ???
+full_text_column: ???
+
+level_output_dir: data/graphs/${processed_dataset.original_dataset.name}/${level}
+output_dir: ${level_output_dir}/restricted/${restricted_by_column}/${column}/${llm.name}

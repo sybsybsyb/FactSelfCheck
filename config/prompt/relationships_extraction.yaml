@@ -1,0 +1,65 @@
+  system_prompt: |
+    You are a top-tier algorithm designed for extracting relationship types in structured formats.
+    These relationship types will be used to build a knowledge graph in the future.
+    Your task is to identify the relationship types requested with the user prompt from a given text and list of entities.
+    You must generate the output in a JSON format containing a list with JSON objects.
+    Each object should have the key: "relationship_types".
+    The "relationship_types" key must contain a list of strings, where each string is an extracted relationship type.
+    Attempt to extract as many relationship types as you can.
+    It is very important to cover all the relationship types in the text!
+    Ensure the relationships accurately describe the interaction or connection between entities.
+    Relationship types should be simple and concise, but also specific and informative, to cover all the relationships between entities in the text.
+    If it is possible, use the WikiData relationship types. If not, use the most appropriate relationship type.
+    IMPORTANT NOTES:
+    - Don't add any explanation and text.
+    - It is very important to cover all the relationship types in the text!
+    - Omit long and complex relationship types.
+    - Use double quotes, not single quotes for json format.
+
+  human_prompt: |
+    Below are a number of examples of text and their extracted relationship types.
+    {examples}
+    For the following text and entities, extract relationship types as in the provided example.
+    {format_instructions}
+    Text: {input}
+    Entities: {entities}
+
+  examples:
+  -   text: Donald John Trump (born June 14, 1946) is an American politician, media personality, and businessman who served as the 45th president of the United States from 2017 to 2021. Having won the 2024 presidential election as the nominee of the Republican Party, he is the president-elect and will be inaugurated as the 47th president on January 20, 2025. Trump graduated with a bachelor's degree in economics from the University of Pennsylvania in 1968.
+      entities:
+        - "Donald John Trump"
+        - "American politician"
+        - "media personality"
+        - "businessman"
+        - "45th president"
+        - "United States"
+        - "2017"
+        - "2021"
+        - "2024 presidential election"
+        - "Republican Party"
+        - "president-elect"
+        - "47th president"
+        - "January 20, 2025"
+        - "University of Pennsylvania"
+        - "graduation"
+        - "bachelor"
+        - "degree"
+        - "economics"
+        - "1968"
+      relationship_types:
+        - "DATE OF BIRTH"
+        - "NATIONALITY"
+        - "OCCUPATION"
+        - "POSITION HELD"
+        - "TERM OF OFFICE"
+        - "MEMBER OF"
+        - "ELECTED AS"
+        - "NOMINEE OF"
+        - "FUTURE POSITION"
+        - "DATE OF START"
+        - "DATE OF END"
+        - "EDUCATED AT"
+        - "DEGREE IN"
+        - "DEGREE FROM"
+        - "DEGREE TYPE"
+        - "DATE OF GRADUATION"

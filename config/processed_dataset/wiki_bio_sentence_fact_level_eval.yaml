@@ -1,0 +1,12 @@
+defaults:
+  - original_dataset: ../../dataset/wiki_bio
+
+ents_rels_path: data/entities_relationships/wiki_bio/response_column/${llm.name}
+response_graphs_path: data/graphs/wiki_bio/sentence/restricted/response_column/response_sentences_column/${llm.name}
+samples_graphs_path: data/graphs/wiki_bio/document/restricted/response_column/samples_column/${llm.name}
+fact_prompt_answers_path: data/predict/wiki_bio/fact_prompt_answers/${llm.name}/${fact_prompt_name}
+fact_text_prompt_answers_path: data/predict/wiki_bio/fact_text_prompt_answers/${llm.name}/${fact_text_prompt_name}
+selfcheckgpt_answers_path: data/predict/wiki_bio/selfcheckgpt_answers/${llm.name}/${selfcheckgpt_prompt_name}
+fact_level_annotation_path: data/fact_level_eval/annotation/wiki_bio/${llm.name}
+
+restricted_by_column: response_column

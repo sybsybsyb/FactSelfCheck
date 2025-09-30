@@ -1,0 +1,8 @@
+defaults:
+  - llm: ???
+  - dataset: ???
+  - _self_
+
+split: ${dataset.test_split_name}
+batch_size: 1
+output_dir: data/baselines/attention_score/${dataset.name}/${llm.name}

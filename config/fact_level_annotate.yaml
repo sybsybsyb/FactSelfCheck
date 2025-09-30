@@ -1,0 +1,9 @@
+defaults:
+  - processed_dataset: wiki_bio_sentence
+  - llm: api/Llama-3.1-70B-Instruct
+  - llm_annotation: ../llm/api/gpt-4o
+  - prompt: fact_level_eval/annotate
+  - _self_
+
+
+output_dir: data/fact_level_eval/annotation/${processed_dataset.original_dataset.name}/${llm.name}

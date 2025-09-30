@@ -1,0 +1,26 @@
+name: fact_level_annotation
+
+system_prompt: |
+  You are a top-tier algorithm designed for annotate whether fact is supported by the source.
+  You will be given a fact and source.
+  Fact is a triple of the form `(subject, predicate, object)`, just like in the knowledge graph.
+  You have to access the factual consistency of the fact with the source.
+  You must return a single word, either `yes` or `no`.
+  You must not return any other text or explanation.
+
+human_prompt: |
+  Below are a number of examples of fact and source and their verification results.
+  {examples}
+  ===
+  For the following fact and source, verify if the fact is supported by the source.
+  Source: {source}
+  Fact: {fact}
+  Is the fact supported by the source?
+
+examples: |
+  - Source: Donald Trump was president of the United States. Donald Trump was born in 1946 and graduated from the University of Pennsylvania.
+    Fact: ('Donald Trump', 'PRESIDENT', 'Canada')
+    Is the fact supported by the source?: no
+  - Source: Michael Jordan is the CEO of PepsiCo. He was born in 1936 and graduated from Yale University.
+    Fact: ('Michael Jordan', 'CEO', 'PepsiCo')
+    Is the fact supported by the source?: yes

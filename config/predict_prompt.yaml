@@ -1,0 +1,8 @@
+defaults:
+  - processed_dataset: ???
+  - llm: ???
+  - prompt: ???
+  - _self_
+
+fact_predictor: fact_prompt
+output_dir: data/predict/${processed_dataset.original_dataset.name}/${fact_predictor}_answers/${llm.name}/${prompt.name}

@@ -1,0 +1,8 @@
+defaults:
+  - original_dataset: ../../dataset/wiki_bio
+
+ents_rels_path: data/entities_relationships/wiki_bio/response_column/${llm.name}
+response_graphs_path: data/graphs/wiki_bio/sentence/restricted/response_column/response_sentences_column/${llm.name}
+samples_graphs_path: data/graphs/wiki_bio/document/restricted/response_column/samples_column/${llm.name}
+
+restricted_by_column: response_column

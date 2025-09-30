@@ -1,0 +1,194 @@
+# credits: This prompt was inspired by langchain prompt template for knowledge graph extraction.
+restricted:
+  system_prompt: |
+    You are a top-tier algorithm designed for extracting information in CSV format to build a knowledge graph.
+    Your task is to identify facts (triples) consisting of a subject, relation, and object from a given text.
+    You must generate the output in CSV format with semicolon ";" as the separator, and lines separated by "\n".
+    The first line should be the header: subject;relation;object
+    Each subsequent line should contain one triple with the following columns:
+    - subject: the text of the extracted entity which is the subject of the relation
+    - relation: the type of relation between the subject and object
+    - object: the text of the extracted entity which is the object of the relation
+    The extracted entities must be from the list provided by the user.
+    The relations must be from the list of allowed relation types provided by the user.
+    Attempt to extract as many facts / triples as you can.
+    Entities can be in many types, such as people, organizations, locations, dates, roles, titles, objects, and more.
+    Maintain Entity Consistency: When extracting entities, it's vital to ensure consistency.
+    If an entity, such as "John Doe", is mentioned multiple times in the text but is referred to by different names or pronouns (e.g., "Joe", "he"), always use the most complete identifier for that entity.
+    The knowledge graph should be coherent and easily understandable, so maintaining consistency in entity references is crucial.
+    The knowledge graph should be complete, so it should cover all the facts in the text.
+    IMPORTANT NOTES:
+    - Don't add any explanation and text.
+    - It is very important to cover all triples (facts) in the text!
+    - Output must be in CSV format with semicolon (;) separators. Lines should be separated by "\n".
+    - Do not include quotes around the values unless they contain semicolons
+
+  human_prompt: |
+    For the following text, allowed entities and allowed relation types, extract facts / triples as in the provided example.
+    Your response should be a list of semicolon separated values with header, eg:
+    ```
+    subject;relation;object
+    Donald John Trump;DATE OF BIRTH;June 14, 1946
+    Donald John Trump;NATIONALITY;American politician
+    ```
+    Below are a number of examples of text and their extracted facts.
+    {examples}
+    Use the following entities, don't use other entity that is not defined below:
+    # ALLOWED ENTITIES:
+    {allowed_nodes}
+    Use the following relation types, don't use other relation that is not defined below:
+    # ALLOWED RELATION TYPES:
+    {allowed_relationships}
+    Text: {input}
+
+  examples:
+    - text: Donald John Trump (born June 14, 1946) is an American politician, media personality, and businessman who served as the 45th president of the United States from 2017 to 2021. Having won the 2024 presidential election as the nominee of the Republican Party, he is the president-elect and will be inaugurated as the 47th president on January 20, 2025. Trump graduated with a bachelor's degree in economics from the University of Pennsylvania in 1968.
+      allowed entities:
+        - "Donald John Trump"
+        - "American politician"
+        - "media personality"
+        - "businessman"
+        - "45th president"
+        - "United States"
+        - "2017"
+        - "2021"
+        - "2024 presidential election"
+        - "Republican Party"
+        - "president-elect"
+        - "47th president"
+        - "January 20, 2025"
+        - "University of Pennsylvania"
+        - "graduation"
+        - "bachelor"
+        - "degree"
+        - "economics"
+        - "1968"
+      allowed relation types:
+        - "DATE OF BIRTH"
+        - "NATIONALITY"
+        - "OCCUPATION"
+        - "POSITION HELD"
+        - "TERM OF OFFICE"
+        - "MEMBER OF"
+        - "ELECTED AS"
+        - "NOMINEE OF"
+        - "FUTURE POSITION"
+        - "DATE OF START"
+        - "DATE OF END"
+        - "EDUCATED AT"
+        - "DEGREE IN"
+        - "DEGREE FROM"
+        - "DEGREE TYPE"
+        - "DATE OF GRADUATION"
+      triples: |
+        subject;relation;object
+        Donald John Trump;DATE OF BIRTH;June 14, 1946
+        Donald John Trump;NATIONALITY;American politician
+        Donald John Trump;OCCUPATION;media personality
+        Donald John Trump;OCCUPATION;businessman
+        Donald John Trump;POSITION HELD;45th president
+        45th president;TERM OF OFFICE;2017
+        45th president;TERM OF OFFICE;2021
+        Donald John Trump;ELECTED AS;2024 presidential election
+        2024 presidential election;NOMINEE OF;Republican Party
+        Donald John Trump;FUTURE POSITION;47th president
+        47th president;DATE OF INAUGURATION;January 20, 2025
+        47th president;DATE OF START;January 20, 2025
+        Donald John Trump;EDUCATED AT;University of Pennsylvania
+        Donald John Trump;DEGREE FROM;University of Pennsylvania
+        Donald John Trump;DEGREE IN;economics
+        Donald John Trump;DATE OF GRADUATION;1968
+
+
+restricted_sentence:
+  system_prompt: |
+    You are a top-tier algorithm designed for extracting information in CSV format to build a knowledge graph.
+    In input, you will receive: sentence, full text, list of entities, and list of relationships.
+    Your task is to identify facts (triples) consisting of a subject, relation, and object from a given sentence.
+    Do not generate relationships that are defined in the full text but not in the sentence.
+    You must generate the output in CSV format with semicolon ";" as the separator, and lines separated by "\n".
+    The first line should be the header: subject;relation;object
+    Each subsequent line should contain one triple with the following columns:
+    - subject: the text of the extracted entity which is the subject of the relation
+    - relation: the type of relation between the subject and object
+    - object: the text of the extracted entity which is the object of the relation
+    The extracted entities must be from the list provided by the user.
+    The relations must be from the list of allowed relation types provided by the user.
+    Attempt to extract as many facts / triples as you can.
+    Entities can be in many types, such as people, organizations, locations, dates, roles, titles, objects, and more.
+    Maintain Entity Consistency: When extracting entities, it's vital to ensure consistency.
+    If an entity, such as "John Doe", is mentioned multiple times in the text but is referred to by different names or pronouns (e.g., "Joe", "he"), always use the most complete identifier for that entity.
+    The knowledge graph should be coherent and easily understandable, so maintaining consistency in entity references is crucial.
+    The knowledge graph should be complete, so it should cover all the facts in the sentence.
+    IMPORTANT NOTES:
+    - Don't add any explanation and text.
+    - It is very important to cover all triples (facts) in the sentence!
+    - Full text is only for understanding the context. Do not add any triples that are not in the sentence.
+    - Output must be in CSV format with semicolon (;) separators. Lines should be separated by "\n".
+    - Do not include quotes around the values unless they contain semicolons
+
+  human_prompt: |
+    For the following sentence, full text, entities, and relation types, extract facts / triples as in the provided sentence.
+    Your response should be a list of semicolon separated values with header, eg:
+    ```
+    subject;relation;object
+    Donald John Trump;DEGREE FROM;University of Pennsylvania
+    Donald John Trump;DEGREE IN;economics
+    ```
+    Below are a number of examples of text and their extracted facts.
+    {examples}
+    Use the following entities, don't use other entity that is not defined below:
+    # ALLOWED ENTITIES:
+    {allowed_nodes}
+    Use the following relation types, don't use other relation that is not defined below:
+    # ALLOWED RELATION TYPES:
+    {allowed_relationships}
+    Full text: {input_text}
+    Sentence: {input_sentence}
+
+  examples:
+  - full_text: Donald John Trump (born June 14, 1946) is an American politician, media personality, and businessman who served as the 45th president of the United States from 2017 to 2021. Having won the 2024 presidential election as the nominee of the Republican Party, he is the president-elect and will be inaugurated as the 47th president on January 20, 2025. Trump graduated with a bachelor's degree in economics from the University of Pennsylvania in 1968.
+    sentence: Trump graduated with a bachelor's degree in economics from the University of Pennsylvania in 1968.
+    allowed entities:
+      - "Donald John Trump"
+      - "American politician"
+      - "media personality"
+      - "businessman"
+      - "45th president"
+      - "United States"
+      - "2017"
+      - "2021"
+      - "2024 presidential election"
+      - "Republican Party"
+      - "president-elect"
+      - "47th president"
+      - "January 20, 2025"
+      - "University of Pennsylvania"
+      - "graduation"
+      - "bachelor"
+      - "degree"
+      - "economics"
+      - "1968"
+    allowed relation types:
+      - "DATE OF BIRTH"
+      - "NATIONALITY"
+      - "OCCUPATION"
+      - "POSITION HELD"
+      - "TERM OF OFFICE"
+      - "MEMBER OF"
+      - "ELECTED AS"
+      - "NOMINEE OF"
+      - "FUTURE POSITION"
+      - "DATE OF START"
+      - "DATE OF END"
+      - "EDUCATED AT"
+      - "DEGREE IN"
+      - "DEGREE FROM"
+      - "DEGREE TYPE"
+      - "DATE OF GRADUATION"
+    triples: |
+      subject;relation;object
+      Donald John Trump;DEGREE FROM;University of Pennsylvania
+      Donald John Trump;DEGREE IN;economics
+      Donald John Trump;DEGREE TYPE;bachelor
+      Donald John Trump;DATE OF GRADUATION;1968

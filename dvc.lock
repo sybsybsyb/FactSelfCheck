@@ -1,0 +1,559 @@
+schema: '2.0'
+stages:
+  build_graphs_restricted@0:
+    cmd: "PYTHONPATH=. python scripts/build_graphs_csv.py --config-name kg_building.yaml
+      processed_dataset=wiki_bio_sentence_ents_rels level=document column=samples_column
+      restricted_by_column=response_column llm=api/Llama-3.1-70B-Instruct +processed_dataset.response_graphs_path=data/graphs/wiki_bio/sentence/restricted/response_column/response_sentences_column/Llama-3.1-70B-Instruct\n"
+    deps:
+    - path: data/entities_relationships/wiki_bio/response_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 3ffacf232fbae1270f08d7ff245b54e8.dir
+      size: 201852
+      nfiles: 4
+    - path: 
+        data/graphs/wiki_bio/sentence/restricted/response_column/response_sentences_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 0aa4c3843f30cff1fa7e1776ce38522b.dir
+      size: 331308
+      nfiles: 4
+    outs:
+    - path: 
+        data/graphs/wiki_bio/document/restricted/response_column/samples_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 6521a86c94880ffa8af16337efacf02b.dir
+      size: 2906823
+      nfiles: 4
+  extract_entities_relations@0:
+    cmd: "PYTHONPATH=. python scripts/extract_entities_relations.py --config-name
+      entities_relationships_extraction.yaml dataset=wiki_bio column=response_column
+      llm=api/Llama-3.1-70B-Instruct\n"
+    outs:
+    - path: data/entities_relationships/wiki_bio/response_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 3ffacf232fbae1270f08d7ff245b54e8.dir
+      size: 201852
+      nfiles: 4
+  build_graphs_restricted_sentences@0:
+    cmd: "PYTHONPATH=. python scripts/build_graphs_csv.py --config-name kg_building.yaml
+      processed_dataset=wiki_bio_sentence_ents_rels level=sentence column=response_sentences_column
+      restricted_by_column=response_column full_text_column=response_column llm=api/Llama-3.1-70B-Instruct\n"
+    deps:
+    - path: data/entities_relationships/wiki_bio/response_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 3ffacf232fbae1270f08d7ff245b54e8.dir
+      size: 201852
+      nfiles: 4
+    outs:
+    - path: 
+        data/graphs/wiki_bio/sentence/restricted/response_column/response_sentences_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 0aa4c3843f30cff1fa7e1776ce38522b.dir
+      size: 331308
+      nfiles: 4
+  get_fact_prompt_answers@0:
+    cmd: "PYTHONPATH=. python scripts/prompt_answers.py processed_dataset=wiki_bio_sentence
+      llm=api/Llama-3.1-70B-Instruct prompt=fact_prediction_with_inference\n"
+    deps:
+    - path: data/entities_relationships/wiki_bio/response_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 3ffacf232fbae1270f08d7ff245b54e8.dir
+      size: 201852
+      nfiles: 4
+    - path: 
+        data/graphs/wiki_bio/document/restricted/response_column/samples_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 6521a86c94880ffa8af16337efacf02b.dir
+      size: 2906823
+      nfiles: 4
+    - path: 
+        data/graphs/wiki_bio/sentence/restricted/response_column/response_sentences_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 0aa4c3843f30cff1fa7e1776ce38522b.dir
+      size: 331308
+      nfiles: 4
+    outs:
+    - path: 
+        data/predict/wiki_bio/fact_prompt_answers/Llama-3.1-70B-Instruct/fact_prediction_with_inference
+      hash: md5
+      md5: dd5f9ac397bfc76c5af1fe58d50a6d18.dir
+      size: 855589
+      nfiles: 4
+  get_selfcheckgpt_answers@0:
+    cmd: "PYTHONPATH=. python scripts/selfcheckgpt_answers.py processed_dataset=wiki_bio_sentence
+      llm=api/Llama-3.1-70B-Instruct prompt=selfcheckgpt-original\n"
+    outs:
+    - path: 
+        data/predict/wiki_bio/selfcheckgpt_answers/Llama-3.1-70B-Instruct/selfcheckgpt-original
+      hash: md5
+      md5: a9740b0dc33f193962b65ed29b59f9df.dir
+      size: 252080
+      nfiles: 4
+  get_fact_text_prompt_answers@0:
+    cmd: "PYTHONPATH=. python scripts/fact_text_prompt_answers.py processed_dataset=wiki_bio_sentence
+      llm=api/Llama-3.1-70B-Instruct prompt=fact_text_prediction_with_inference\n"
+    deps:
+    - path: data/entities_relationships/wiki_bio/response_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 3ffacf232fbae1270f08d7ff245b54e8.dir
+      size: 201852
+      nfiles: 4
+    - path: 
+        data/graphs/wiki_bio/document/restricted/response_column/samples_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 6521a86c94880ffa8af16337efacf02b.dir
+      size: 2906823
+      nfiles: 4
+    - path: 
+        data/graphs/wiki_bio/sentence/restricted/response_column/response_sentences_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 0aa4c3843f30cff1fa7e1776ce38522b.dir
+      size: 331308
+      nfiles: 4
+    outs:
+    - path: 
+        data/predict/wiki_bio/fact_text_prompt_answers/Llama-3.1-70B-Instruct/fact_text_prediction_with_inference
+      hash: md5
+      md5: cae605203040aa82b0869ff56df003da.dir
+      size: 824722
+      nfiles: 4
+  correct@0:
+    cmd: "PYTHONPATH=. python scripts/correction/correct.py --config-name correct_gpt.yaml
+      llm=api/Llama-3.1-70B-Instruct type=baseline prompt=correction/correction_baseline\n"
+    deps:
+    - path: 
+        data/graphs/wiki_bio/sentence/restricted/response_column/response_sentences_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 0aa4c3843f30cff1fa7e1776ce38522b.dir
+      size: 331308
+      nfiles: 4
+    - path: 
+        data/predict/wiki_bio/fact_text_prompt_answers/Llama-3.1-70B-Instruct/fact_text_prediction_with_inference
+      hash: md5
+      md5: cae605203040aa82b0869ff56df003da.dir
+      size: 824722
+      nfiles: 4
+    - path: 
+        data/predict/wiki_bio/selfcheckgpt_answers/Llama-3.1-70B-Instruct/selfcheckgpt-original
+      hash: md5
+      md5: a9740b0dc33f193962b65ed29b59f9df.dir
+      size: 252080
+      nfiles: 4
+    outs:
+    - path: 
+        data/correction/correct/wiki_bio/baseline/Llama-3.1-70B-Instruct/correction_baseline
+      hash: md5
+      md5: 9478c9007bf20b167869fa91cede0629.dir
+      size: 199385
+      nfiles: 4
+  correct@1:
+    cmd: "PYTHONPATH=. python scripts/correction/correct.py --config-name correct_gpt.yaml
+      llm=api/Llama-3.1-70B-Instruct type=facts prompt=correction/correction_facts\n"
+    deps:
+    - path: 
+        data/graphs/wiki_bio/sentence/restricted/response_column/response_sentences_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 0aa4c3843f30cff1fa7e1776ce38522b.dir
+      size: 331308
+      nfiles: 4
+    - path: 
+        data/predict/wiki_bio/fact_text_prompt_answers/Llama-3.1-70B-Instruct/fact_text_prediction_with_inference
+      hash: md5
+      md5: cae605203040aa82b0869ff56df003da.dir
+      size: 824722
+      nfiles: 4
+    - path: 
+        data/predict/wiki_bio/selfcheckgpt_answers/Llama-3.1-70B-Instruct/selfcheckgpt-original
+      hash: md5
+      md5: a9740b0dc33f193962b65ed29b59f9df.dir
+      size: 252080
+      nfiles: 4
+    outs:
+    - path: data/correction/correct/wiki_bio/facts/Llama-3.1-70B-Instruct/correction_facts
+      hash: md5
+      md5: 484e64a29da67c6f0e9689ae5f055861.dir
+      size: 176166
+      nfiles: 4
+  correct@2:
+    cmd: "PYTHONPATH=. python scripts/correction/correct.py --config-name correct_gpt.yaml
+      llm=api/Llama-3.1-70B-Instruct type=sentences prompt=correction/correction_sentences\n"
+    deps:
+    - path: 
+        data/graphs/wiki_bio/sentence/restricted/response_column/response_sentences_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 0aa4c3843f30cff1fa7e1776ce38522b.dir
+      size: 331308
+      nfiles: 4
+    - path: 
+        data/predict/wiki_bio/fact_text_prompt_answers/Llama-3.1-70B-Instruct/fact_text_prediction_with_inference
+      hash: md5
+      md5: cae605203040aa82b0869ff56df003da.dir
+      size: 824722
+      nfiles: 4
+    - path: 
+        data/predict/wiki_bio/selfcheckgpt_answers/Llama-3.1-70B-Instruct/selfcheckgpt-original
+      hash: md5
+      md5: a9740b0dc33f193962b65ed29b59f9df.dir
+      size: 252080
+      nfiles: 4
+    outs:
+    - path: 
+        data/correction/correct/wiki_bio/sentences/Llama-3.1-70B-Instruct/correction_sentences
+      hash: md5
+      md5: be6ce7479080d71aecca3c5ab884b337.dir
+      size: 199482
+      nfiles: 4
+  evaluate_correction@0:
+    cmd: "PYTHONPATH=. python scripts/correction/evaluate_correction.py\n"
+    deps:
+    - path: 
+        data/correction/correct/wiki_bio/baseline/Llama-3.1-70B-Instruct/correction_baseline
+      hash: md5
+      md5: 9478c9007bf20b167869fa91cede0629.dir
+      size: 199385
+      nfiles: 4
+    - path: data/correction/correct/wiki_bio/facts/Llama-3.1-70B-Instruct/correction_facts
+      hash: md5
+      md5: 484e64a29da67c6f0e9689ae5f055861.dir
+      size: 176166
+      nfiles: 4
+    - path: 
+        data/correction/correct/wiki_bio/sentences/Llama-3.1-70B-Instruct/correction_sentences
+      hash: md5
+      md5: be6ce7479080d71aecca3c5ab884b337.dir
+      size: 199482
+      nfiles: 4
+    outs:
+    - path: data/correction/evaluate/wiki_bio/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 384507e13d2679b2f2a18220d3bb9a2d.dir
+      size: 42289
+      nfiles: 4
+  annotate_fact_level@0:
+    cmd: "PYTHONPATH=. python scripts/fact_level_eval/annotate.py\n"
+    deps:
+    - path: 
+        data/graphs/wiki_bio/sentence/restricted/response_column/response_sentences_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 0aa4c3843f30cff1fa7e1776ce38522b.dir
+      size: 331308
+      nfiles: 4
+    - path: 
+        data/predict/wiki_bio/fact_prompt_answers/Llama-3.1-70B-Instruct/fact_prediction_with_inference
+      hash: md5
+      md5: dd5f9ac397bfc76c5af1fe58d50a6d18.dir
+      size: 855589
+      nfiles: 4
+    - path: 
+        data/predict/wiki_bio/fact_text_prompt_answers/Llama-3.1-70B-Instruct/fact_text_prediction_with_inference
+      hash: md5
+      md5: cae605203040aa82b0869ff56df003da.dir
+      size: 824722
+      nfiles: 4
+    - path: 
+        data/predict/wiki_bio/selfcheckgpt_answers/Llama-3.1-70B-Instruct/selfcheckgpt-original
+      hash: md5
+      md5: a9740b0dc33f193962b65ed29b59f9df.dir
+      size: 252080
+      nfiles: 4
+    outs:
+    - path: data/fact_level_eval/annotation/wiki_bio/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: b0c776f4d40674316ad95c46913fb05f.dir
+      size: 49120
+      nfiles: 4
+  get_selfcheckgpt_answers@1:
+    cmd: "PYTHONPATH=. python scripts/selfcheckgpt_answers.py processed_dataset=wiki_bio_sentence
+      llm=api/Llama-3.1-70B-Instruct prompt=selfcheckgpt-enhanced\n"
+    outs:
+    - path: 
+        data/predict/wiki_bio/selfcheckgpt_answers/Llama-3.1-70B-Instruct/selfcheckgpt-enhanced
+      hash: md5
+      md5: 25b4e6f079942ed425c13088e3a67f2b.dir
+      size: 243360
+      nfiles: 4
+  generate_activations@0:
+    cmd: "PYTHONPATH=. python scripts/baselines/generate_activations.py dataset=wiki_bio
+      llm=local/Llama-3.1-70B-Instruct\n"
+    outs:
+    - path: data/baselines/attention_score/wiki_bio/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: e00584ad313f08d8ea46d5cf83a64976.dir
+      size: 594530182
+      nfiles: 2
+  eval_attention_score@0:
+    cmd: "PYTHONPATH=. python scripts/baselines/eval_attention_score.py dataset=wiki_bio\n"
+    deps:
+    - path: data/baselines/attention_score/wiki_bio/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: e00584ad313f08d8ea46d5cf83a64976.dir
+      size: 594530182
+      nfiles: 2
+    outs:
+    - path: data/baselines/attention_score/wiki_bio/results.json
+      hash: md5
+      md5: e25aab3a9810e07a90a156737087880d
+      size: 583
+  generate_samples_from_chatgpt:
+    cmd: "PYTHONPATH=. python scripts/fava/generate_samples_chatgpt.py --save-dir
+      data/fava/\n"
+    outs:
+    - path: data/fava/chatgpt/config.yaml
+      hash: md5
+      md5: b98651c5519b207aceb782dc34a1278e
+      size: 369
+    - path: data/fava/chatgpt/results.json
+      hash: md5
+      md5: 3ba3f6d30769610c3994a5693c1cde0f
+      size: 4734371
+  generate_samples_from_llama:
+    cmd: "PYTHONPATH=. python scripts/fava/generate_samples_llama.py --save-dir data/fava/\n"
+    outs:
+    - path: data/fava/llama/config.yaml
+      hash: md5
+      md5: 15bead55e3f724e102029a470375cd14
+      size: 377
+    - path: data/fava/llama/results.json
+      hash: md5
+      md5: 6d16d21a31be8e4b11d3a8415f396f85
+      size: 9189379
+  merge_fava_samples:
+    cmd: "PYTHONPATH=. python scripts/fava/merge_samples.py data/fava/chatgpt/results.json
+      data/fava/llama/results.json --output-file data/fava/fava_with_samples.json\n"
+    deps:
+    - path: data/fava/chatgpt/results.json
+      hash: md5
+      md5: 3ba3f6d30769610c3994a5693c1cde0f
+      size: 4734371
+    - path: data/fava/llama/results.json
+      hash: md5
+      md5: 6d16d21a31be8e4b11d3a8415f396f85
+      size: 9189379
+    outs:
+    - path: data/fava/fava_with_samples.json
+      hash: md5
+      md5: 3a6cee65122835463685ac3f4a947d26
+      size: 14991881
+  create_fava_dataset:
+    cmd: "PYTHONPATH=. python scripts/fava/create_dataset.py --input-file data/fava/fava_with_samples.json
+      --output-file data/fava-sampling/\n"
+    deps:
+    - path: data/fava/fava_with_samples.json
+      hash: md5
+      md5: 3a6cee65122835463685ac3f4a947d26
+      size: 14991881
+    outs:
+    - path: data/fava-sampling/
+      hash: md5
+      md5: 9c0d2a908e13b0c38336d80c04ee70a3.dir
+      size: 15144563
+      nfiles: 4
+  extract_entities_relations@1:
+    cmd: "PYTHONPATH=. python scripts/extract_entities_relations.py --config-name
+      entities_relationships_extraction.yaml dataset=fava-sampling column=response_column
+      llm=api/Llama-3.1-70B-Instruct\n"
+    outs:
+    - path: data/entities_relationships/fava-sampling/response_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 9ef6868dd84586d6f1b3ef1eb9123598.dir
+      size: 692920
+      nfiles: 4
+  build_graphs_restricted_sentences@1:
+    cmd: "PYTHONPATH=. python scripts/build_graphs_csv.py --config-name kg_building.yaml
+      processed_dataset=fava-sampling_sentence_ents_rels level=sentence column=response_sentences_column
+      restricted_by_column=response_column full_text_column=response_column llm=api/Llama-3.1-70B-Instruct\n"
+    deps:
+    - path: data/entities_relationships/fava-sampling/response_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 9ef6868dd84586d6f1b3ef1eb9123598.dir
+      size: 692920
+      nfiles: 4
+    outs:
+    - path: 
+        data/graphs/fava-sampling/sentence/restricted/response_column/response_sentences_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: f6c54c76cd3695dab09a63a0bc976ae2.dir
+      size: 928545
+      nfiles: 4
+  build_graphs_restricted@1:
+    cmd: "PYTHONPATH=. python scripts/build_graphs_csv.py --config-name kg_building.yaml
+      processed_dataset=fava-sampling_sentence_ents_rels level=document column=samples_column
+      restricted_by_column=response_column llm=api/Llama-3.1-70B-Instruct +processed_dataset.response_graphs_path=data/graphs/fava-sampling/sentence/restricted/response_column/response_sentences_column/Llama-3.1-70B-Instruct\n"
+    deps:
+    - path: data/entities_relationships/fava-sampling/response_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 9ef6868dd84586d6f1b3ef1eb9123598.dir
+      size: 692920
+      nfiles: 4
+    - path: 
+        data/graphs/fava-sampling/sentence/restricted/response_column/response_sentences_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: f6c54c76cd3695dab09a63a0bc976ae2.dir
+      size: 928545
+      nfiles: 4
+    outs:
+    - path: 
+        data/graphs/fava-sampling/document/restricted/response_column/samples_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 5651064ec8bfd6156b81696093eb2de9.dir
+      size: 11730572
+      nfiles: 4
+  get_fact_prompt_answers@1:
+    cmd: "PYTHONPATH=. python scripts/prompt_answers.py processed_dataset=fava-sampling_sentence
+      llm=api/Llama-3.1-70B-Instruct prompt=fact_prediction_with_inference\n"
+    deps:
+    - path: data/entities_relationships/fava-sampling/response_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 9ef6868dd84586d6f1b3ef1eb9123598.dir
+      size: 692920
+      nfiles: 4
+    - path: 
+        data/graphs/fava-sampling/document/restricted/response_column/samples_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 5651064ec8bfd6156b81696093eb2de9.dir
+      size: 11730572
+      nfiles: 4
+    - path: 
+        data/graphs/fava-sampling/sentence/restricted/response_column/response_sentences_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: f6c54c76cd3695dab09a63a0bc976ae2.dir
+      size: 928545
+      nfiles: 4
+    outs:
+    - path: 
+        data/predict/fava-sampling/fact_prompt_answers/Llama-3.1-70B-Instruct/fact_prediction_with_inference
+      hash: md5
+      md5: 7cf42363c90647d8ff511f84c3ee24e3.dir
+      size: 2310895
+      nfiles: 4
+  get_selfcheckgpt_answers@2:
+    cmd: "PYTHONPATH=. python scripts/selfcheckgpt_answers.py processed_dataset=fava-sampling_sentence
+      llm=api/Llama-3.1-70B-Instruct prompt=selfcheckgpt-original\n"
+    outs:
+    - path: 
+        data/predict/fava-sampling/selfcheckgpt_answers/Llama-3.1-70B-Instruct/selfcheckgpt-original
+      hash: md5
+      md5: 02bc64c5c473debc0bcced464cc99e15.dir
+      size: 872298
+      nfiles: 4
+  get_fact_text_prompt_answers@1:
+    cmd: "PYTHONPATH=. python scripts/fact_text_prompt_answers.py processed_dataset=fava-sampling_sentence
+      llm=api/Llama-3.1-70B-Instruct prompt=fact_text_prediction_with_inference\n"
+    deps:
+    - path: data/entities_relationships/fava-sampling/response_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 9ef6868dd84586d6f1b3ef1eb9123598.dir
+      size: 692920
+      nfiles: 4
+    - path: 
+        data/graphs/fava-sampling/document/restricted/response_column/samples_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 5651064ec8bfd6156b81696093eb2de9.dir
+      size: 11730572
+      nfiles: 4
+    - path: 
+        data/graphs/fava-sampling/sentence/restricted/response_column/response_sentences_column/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: f6c54c76cd3695dab09a63a0bc976ae2.dir
+      size: 928545
+      nfiles: 4
+    outs:
+    - path: 
+        data/predict/fava-sampling/fact_text_prompt_answers/Llama-3.1-70B-Instruct/fact_text_prediction_with_inference
+      hash: md5
+      md5: e478bd690fb177f11eacd18cd390fe0f.dir
+      size: 2301828
+      nfiles: 4
+  generate_activations@1:
+    cmd: "PYTHONPATH=. python scripts/baselines/generate_activations.py dataset=fava-sampling
+      llm=local/Llama-3.1-70B-Instruct\n"
+    outs:
+    - path: data/baselines/attention_score/fava-sampling/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 679cad286fca7d92f1972b02d7c1302e.dir
+      size: 1661697520
+      nfiles: 2
+  predict_selfcheckgpt_nli@0:
+    cmd: "PYTHONPATH=. python scripts/baselines/predict_selfcheckgpt_nli.py dataset=wiki_bio\n"
+    outs:
+    - path: data/baselines/selfcheckgpt_nli/wiki_bio
+      hash: md5
+      md5: 9fa6bc0a834bedae980ac1159edaa1d3.dir
+      size: 315873
+      nfiles: 4
+  get_selfcheckgpt_answers@3:
+    cmd: "PYTHONPATH=. python scripts/selfcheckgpt_answers.py processed_dataset=fava-sampling_sentence
+      llm=api/Llama-3.1-70B-Instruct prompt=selfcheckgpt-enhanced\n"
+    outs:
+    - path: 
+        data/predict/fava-sampling/selfcheckgpt_answers/Llama-3.1-70B-Instruct/selfcheckgpt-enhanced
+      hash: md5
+      md5: 47e0b0691b2ef889effd7dedf8bd6cdd.dir
+      size: 752162
+      nfiles: 4
+  predict_selfcheckgpt_nli@1:
+    cmd: "PYTHONPATH=. python scripts/baselines/predict_selfcheckgpt_nli.py dataset=fava-sampling\n"
+    outs:
+    - path: data/baselines/selfcheckgpt_nli/fava-sampling
+      hash: md5
+      md5: 6c42aeb74af77ad4d13e957d90088057.dir
+      size: 932010
+      nfiles: 4
+  predict_proba_metrics@0:
+    cmd: "PYTHONPATH=. python scripts/baselines/predict_proba_metrics.py dataset=wiki_bio
+      llm=local/Llama-3.1-70B-Instruct\n"
+    outs:
+    - path: data/baselines/proba_metrics/wiki_bio/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 9ae78f87cc3883a3577238c29b5d6a37.dir
+      size: 5448698
+      nfiles: 3
+  predict_proba_metrics@1:
+    cmd: "PYTHONPATH=. python scripts/baselines/predict_proba_metrics.py dataset=fava-sampling
+      llm=local/Llama-3.1-70B-Instruct\n"
+    outs:
+    - path: data/baselines/proba_metrics/fava-sampling/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: a2e77570a509bad96dd90bc01b7a0343.dir
+      size: 15194886
+      nfiles: 3
+  eval_attention_score@1:
+    cmd: "PYTHONPATH=. python scripts/baselines/eval_attention_score.py dataset=fava-sampling\n"
+    deps:
+    - path: data/baselines/attention_score/fava-sampling/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 679cad286fca7d92f1972b02d7c1302e.dir
+      size: 1661697520
+      nfiles: 2
+    outs:
+    - path: data/baselines/attention_score/fava-sampling/results.json
+      hash: md5
+      md5: a0f65086d40bf2c80f0d9b92aa0611f4
+      size: 584
+  eval_proba_metrics@0:
+    cmd: "PYTHONPATH=. python scripts/baselines/eval_proba_metrics.py dataset=wiki_bio
+      llm=local/Llama-3.1-70B-Instruct\n"
+    deps:
+    - path: data/baselines/proba_metrics/wiki_bio/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: 9ae78f87cc3883a3577238c29b5d6a37.dir
+      size: 5448698
+      nfiles: 3
+    outs:
+    - path: data/baselines/proba_metrics/wiki_bio/results.json
+      hash: md5
+      md5: 2a786dc91fb021e7e444196752131344
+      size: 763
+  eval_proba_metrics@1:
+    cmd: "PYTHONPATH=. python scripts/baselines/eval_proba_metrics.py dataset=fava-sampling
+      llm=local/Llama-3.1-70B-Instruct\n"
+    deps:
+    - path: data/baselines/proba_metrics/fava-sampling/Llama-3.1-70B-Instruct
+      hash: md5
+      md5: a2e77570a509bad96dd90bc01b7a0343.dir
+      size: 15194886
+      nfiles: 3
+    outs:
+    - path: data/baselines/proba_metrics/fava-sampling/results.json
+      hash: md5
+      md5: 8a3894cbb3e7bb9775263cbfe156ce08
+      size: 762

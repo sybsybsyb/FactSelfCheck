@@ -1,0 +1,29 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+        name: End-of-file fixer
+      - name: mixed-line-ending
+        id: mixed-line-ending
+        args: [--fix, lf]
+      - id: trailing-whitespace
+        name: Remove trailing whitespaces
+      - id: check-toml
+        name: Check toml
+      - id: check-yaml
+        name: Check yaml
+        args: [--allow-multiple-documents]
+
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        name: Ruff Linter
+        args: [--fix, --exit-non-zero-on-fix, hallucinations_kg, scripts, tests, notebooks]
+      - id: ruff-format
+        name: Ruff Formatter
+        args: [hallucinations_kg, scripts, tests, notebooks]
+
+exclude: 'data/|dvc.lock'

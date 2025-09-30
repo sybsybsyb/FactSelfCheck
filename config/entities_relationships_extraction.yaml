@@ -1,0 +1,15 @@
+defaults:
+  - kg_builder: langchain
+  - llm: api/Llama-3.1-70B-Instruct
+  - fixing_llm: ../llm/api/Llama-3.1-70B-Instruct
+  - prompt_entities: ../prompt/entities_extraction
+  - prompt_relationships: ../prompt/relationships_extraction
+  - dataset: ???
+  - _self_
+
+fixing_llm:
+  temperature: 0.7
+
+column: ???
+
+output_dir: data/entities_relationships/${dataset.name}/${column}/${llm.name}

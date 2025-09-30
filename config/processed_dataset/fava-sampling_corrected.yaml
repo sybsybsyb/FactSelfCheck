@@ -1,0 +1,6 @@
+defaults:
+  - original_dataset: ../../dataset/fava-sampling
+
+evaluation_baseline_path: data/correction/correct/${processed_dataset.original_dataset.name}/baseline/${llm.name}/${correction_baseline_prompt_name}
+evaluation_sentences_path: data/correction/correct/${processed_dataset.original_dataset.name}/sentences/${llm.name}/${correction_sentences_prompt_name}
+evaluation_facts_path: data/correction/correct/${processed_dataset.original_dataset.name}/facts/${llm.name}/${correction_facts_prompt_name}

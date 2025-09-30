@@ -1,0 +1,11 @@
+name: fava-sampling
+path: graphml-lab-pwr/fava-sampling
+source_column: null
+response_column: output
+response_sentences_column: sentences
+samples_column: text_samples
+annotations_column: sentences_annotations
+test_split_name: test
+local: false
+
+binary_annotations_column: sentences_binary_annotations

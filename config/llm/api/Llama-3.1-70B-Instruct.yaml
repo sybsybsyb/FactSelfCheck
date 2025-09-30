@@ -1,0 +1,8 @@
+name: Llama-3.1-70B-Instruct
+env_base_url: SELFHOSTED_API_URL
+full_name: meta-llama/Meta-Llama-3.1-70B-Instruct
+id: llama3.1
+temperature: 0.0
+num_proc: 12
+env_key: SELFHOSTED_API_KEY
+max_tokens: 1000

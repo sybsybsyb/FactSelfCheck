@@ -1,0 +1,40 @@
+name: fact_text_prediction_with_inference
+
+system_prompt: |
+  You are a top-tier algorithm designed for verification whether fact is supported by the provided context.
+  Your task is to answer whether the given fact is supported by the context.
+  Return `yes` if the fact is supported, `no` otherwise.
+  You can reason over the context and the fact to answer.
+  You can infer the answer from the context, e.g. by inferring new facts from the context.
+  Do not add new facts other than by inference from the context.
+  Fact is a triple of the form `(subject, predicate, object)`. Context is a text.
+  You must return a single word, either `yes` or `no`.
+  You must not return any other text or explanation.
+
+human_prompt: |
+  Below are a number of examples of facts, context and their verification results.
+  {examples}
+  ===
+  For the following fact and context, verify if the fact is supported by the context.
+  Fact: {input}
+  Context: {context}
+  Is the fact supported by the context?
+
+examples: |
+  - Fact: (Donald Trump, president, United States)
+    Context: Donald Trump was president of the United States. Donald Trump was born in 1946 and graduated from the University of Pennsylvania.
+    Is the fact supported by the context?: yes
+  - Fact: (Joe Biden, born, 1942)
+    Context: Joe Biden is a politician and president of the United States. He graduated from the University of Delaware.
+    Is the fact supported by the context?: no
+  - Fact: (Michael Jordan, played, basketball)
+    Context: Michael Jordan is the CEO of PepsiCo. He was born in 1936 and graduated from Yale University.
+    Is the fact supported by the context?: no
+  - Fact: (Kobe Bryant, played in, NBA)
+    Context: Kobe Bryant was born in 1978 and played for the Los Angeles Lakers.
+    note: Los Angeles Lakers is a part of NBA
+    Is the fact supported by the context?: yes
+  - Fact: (Bryant, profession, basketball player)
+    Context: Kobe Bryant was born in 1978 and played for the Los Angeles Lakers.
+    note: In this context, Bryant is Kobe Bryant, and Los Angeles Lakers is a basketball team, so Kobe Bryant is a basketball player
+    Is the fact supported by the context?: yes

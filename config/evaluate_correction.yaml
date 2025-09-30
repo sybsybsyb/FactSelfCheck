@@ -1,0 +1,14 @@
+defaults:
+  - processed_dataset: wiki_bio_corrected
+  - llm: api/Llama-3.1-70B-Instruct
+  - llm_evaluation: ../llm/api/gpt-4o
+  - correction_evaluation_prompt: ../prompt/correction/correction_evaluation
+  - _self_
+
+correction_baseline_prompt_name: correction_baseline
+correction_sentences_prompt_name: correction_sentences
+correction_facts_prompt_name: correction_facts
+
+evaluation_columns: [correction_baseline_corrected_sentences, correction_sentences_corrected_sentences, correction_facts_corrected_sentences]
+
+output_dir: data/correction/evaluate/${processed_dataset.original_dataset.name}/${llm.name}/

@@ -1,0 +1,9 @@
+defaults:
+  - llm: local/Llama-3.1-70B-Instruct
+  - dataset: ???
+  - _self_
+
+split: ${dataset.test_split_name}
+batch_size: 1
+input_dir: data/baselines/proba_metrics/${dataset.name}/${llm.name}
+results_file: data/baselines/proba_metrics/${dataset.name}/results.json

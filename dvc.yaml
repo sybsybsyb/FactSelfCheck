@@ -1,0 +1,316 @@
+stages:
+  extract_entities_relations:
+    foreach:
+      - dataset: wiki_bio
+        column: response_column
+        llm: Llama-3.1-70B-Instruct
+      - dataset: fava-sampling
+        column: response_column
+        llm: Llama-3.1-70B-Instruct
+    do:
+      cmd: >
+        PYTHONPATH=. python scripts/extract_entities_relations.py
+        --config-name entities_relationships_extraction.yaml
+        dataset=${item.dataset}
+        column=${item.column}
+        llm=api/${item.llm}
+      outs:
+        - data/entities_relationships/${item.dataset}/${item.column}/${item.llm}
+
+  build_graphs_restricted_sentences:
+    foreach:
+      - dataset: wiki_bio
+        level: sentence
+        column: response_sentences_column
+        restricted_by_column: response_column
+        full_text_column: response_column
+        llm: Llama-3.1-70B-Instruct
+      - dataset: fava-sampling
+        level: sentence
+        column: response_sentences_column
+        restricted_by_column: response_column
+        full_text_column: response_column
+        llm: Llama-3.1-70B-Instruct
+    do:
+      cmd: >
+        PYTHONPATH=. python scripts/build_graphs_csv.py
+        --config-name kg_building.yaml
+        processed_dataset=${item.dataset}_sentence_ents_rels
+        level=${item.level}
+        column=${item.column}
+        restricted_by_column=${item.restricted_by_column}
+        full_text_column=${item.full_text_column}
+        llm=api/${item.llm}
+      deps:
+        - data/entities_relationships/${item.dataset}/${item.restricted_by_column}/${item.llm}
+      outs:
+        - data/graphs/${item.dataset}/${item.level}/restricted/${item.restricted_by_column}/${item.column}/${item.llm}
+
+
+  build_graphs_restricted:
+    foreach:
+      - dataset: wiki_bio
+        level: document
+        column: samples_column
+        restricted_by_column: response_column
+        llm: Llama-3.1-70B-Instruct
+      - dataset: fava-sampling
+        level: document
+        column: samples_column
+        restricted_by_column: response_column
+        llm: Llama-3.1-70B-Instruct
+
+    do:
+      cmd: >
+        PYTHONPATH=. python scripts/build_graphs_csv.py
+        --config-name kg_building.yaml
+        processed_dataset=${item.dataset}_sentence_ents_rels
+        level=${item.level}
+        column=${item.column}
+        restricted_by_column=${item.restricted_by_column}
+        llm=api/${item.llm}
+        +processed_dataset.response_graphs_path=data/graphs/${item.dataset}/sentence/restricted/${item.restricted_by_column}/response_sentences_column/${item.llm}
+      deps:
+        - data/entities_relationships/${item.dataset}/${item.restricted_by_column}/${item.llm}
+        - data/graphs/${item.dataset}/sentence/restricted/${item.restricted_by_column}/response_sentences_column/${item.llm}
+      outs:
+        - data/graphs/${item.dataset}/${item.level}/restricted/${item.restricted_by_column}/${item.column}/${item.llm}
+
+  get_fact_prompt_answers:
+    foreach:
+      - dataset: wiki_bio
+        llm: Llama-3.1-70B-Instruct
+        prompt: fact_prediction_with_inference
+      - dataset: fava-sampling
+        llm: Llama-3.1-70B-Instruct
+        prompt: fact_prediction_with_inference
+    do:
+      cmd: >
+        PYTHONPATH=. python scripts/prompt_answers.py
+        processed_dataset=${item.dataset}_sentence
+        llm=api/${item.llm}
+        prompt=${item.prompt}
+      deps:
+        - data/entities_relationships/${item.dataset}/response_column/${item.llm}
+        - data/graphs/${item.dataset}/sentence/restricted/response_column/response_sentences_column/${item.llm}
+        - data/graphs/${item.dataset}/document/restricted/response_column/samples_column/${item.llm}
+      outs:
+        - data/predict/${item.dataset}/fact_prompt_answers/${item.llm}/${item.prompt}
+
+  get_selfcheckgpt_answers:
+    foreach:
+      - dataset: wiki_bio
+        llm: Llama-3.1-70B-Instruct
+        prompt: selfcheckgpt-original
+      - dataset: wiki_bio
+        llm: Llama-3.1-70B-Instruct
+        prompt: selfcheckgpt-enhanced
+      - dataset: fava-sampling
+        llm: Llama-3.1-70B-Instruct
+        prompt: selfcheckgpt-original
+      - dataset: fava-sampling
+        llm: Llama-3.1-70B-Instruct
+        prompt: selfcheckgpt-enhanced
+    do:
+      cmd: >
+        PYTHONPATH=. python scripts/selfcheckgpt_answers.py
+        processed_dataset=${item.dataset}_sentence
+        llm=api/${item.llm}
+        prompt=${item.prompt}
+      outs:
+        - data/predict/${item.dataset}/selfcheckgpt_answers/${item.llm}/${item.prompt}
+
+  get_fact_text_prompt_answers:
+    foreach:
+      - dataset: wiki_bio
+        llm: Llama-3.1-70B-Instruct
+        prompt: fact_text_prediction_with_inference
+      - dataset: fava-sampling
+        llm: Llama-3.1-70B-Instruct
+        prompt: fact_text_prediction_with_inference
+    do:
+      cmd: >
+        PYTHONPATH=. python scripts/fact_text_prompt_answers.py
+        processed_dataset=${item.dataset}_sentence
+        llm=api/${item.llm}
+        prompt=${item.prompt}
+      deps:
+        - data/entities_relationships/${item.dataset}/response_column/${item.llm}
+        - data/graphs/${item.dataset}/sentence/restricted/response_column/response_sentences_column/${item.llm}
+        - data/graphs/${item.dataset}/document/restricted/response_column/samples_column/${item.llm}
+      outs:
+        - data/predict/${item.dataset}/fact_text_prompt_answers/${item.llm}/${item.prompt}
+
+  predict_selfcheckgpt_nli:
+    foreach:
+      - dataset: wiki_bio
+      - dataset: fava-sampling
+    do:
+      cmd: >
+        PYTHONPATH=. python scripts/baselines/predict_selfcheckgpt_nli.py
+        dataset=${item.dataset}
+      outs:
+        - data/baselines/selfcheckgpt_nli/${item.dataset}
+
+  predict_proba_metrics:
+    foreach:
+      - dataset: wiki_bio
+        llm: Llama-3.1-70B-Instruct
+      - dataset: fava-sampling
+        llm: Llama-3.1-70B-Instruct
+    do:
+      cmd: >
+        PYTHONPATH=. python scripts/baselines/predict_proba_metrics.py
+        dataset=${item.dataset}
+        llm=local/${item.llm}
+      outs:
+        - data/baselines/proba_metrics/${item.dataset}/${item.llm}
+
+  eval_proba_metrics:
+    foreach:
+      - dataset: wiki_bio
+        llm: Llama-3.1-70B-Instruct
+      - dataset: fava-sampling
+        llm: Llama-3.1-70B-Instruct
+    do:
+      cmd: >
+        PYTHONPATH=. python scripts/baselines/eval_proba_metrics.py
+        dataset=${item.dataset}
+        llm=local/${item.llm}
+      deps:
+        - data/baselines/proba_metrics/${item.dataset}/${item.llm}
+      outs:
+        - data/baselines/proba_metrics/${item.dataset}/results.json:
+            cache: false
+
+  correct:
+    foreach:
+      - dataset: wiki_bio
+        llm: Llama-3.1-70B-Instruct
+        type: baseline
+        fact_text_prompt: fact_text_prediction_with_inference
+        selfcheckgpt_prompt: selfcheckgpt-original
+        llm_correction: gpt
+      - dataset: wiki_bio
+        llm: Llama-3.1-70B-Instruct
+        type: facts
+        fact_text_prompt: fact_text_prediction_with_inference
+        selfcheckgpt_prompt: selfcheckgpt-original
+        llm_correction: gpt
+      - dataset: wiki_bio
+        llm: Llama-3.1-70B-Instruct
+        type: sentences
+        fact_text_prompt: fact_text_prediction_with_inference
+        selfcheckgpt_prompt: selfcheckgpt-original
+        llm_correction: gpt
+    do:
+      cmd: >
+        PYTHONPATH=. python scripts/correction/correct.py
+        --config-name correct_${item.llm_correction}.yaml
+        llm=api/${item.llm}
+        type=${item.type}
+        prompt=correction/correction_${item.type}
+      deps:
+        - data/predict/${item.dataset}/selfcheckgpt_answers/${item.llm}/${item.selfcheckgpt_prompt}
+        - data/predict/${item.dataset}/fact_text_prompt_answers/${item.llm}/${item.fact_text_prompt}
+        - data/graphs/${item.dataset}/sentence/restricted/response_column/response_sentences_column/${item.llm}
+      outs:
+        - data/correction/correct/${item.dataset}/${item.type}/${item.llm}/correction_${item.type}
+
+  evaluate_correction:
+    foreach:
+      - dataset: wiki_bio
+        llm: Llama-3.1-70B-Instruct
+    do:
+      cmd: >
+        PYTHONPATH=. python scripts/correction/evaluate_correction.py
+      deps:
+        - data/correction/correct/${item.dataset}/baseline/${item.llm}/correction_baseline
+        - data/correction/correct/${item.dataset}/facts/${item.llm}/correction_facts
+        - data/correction/correct/${item.dataset}/sentences/${item.llm}/correction_sentences
+      outs:
+        - data/correction/evaluate/${item.dataset}/${item.llm}
+
+  annotate_fact_level:
+    foreach:
+      - dataset: wiki_bio
+        llm: Llama-3.1-70B-Instruct
+    do:
+      cmd: >
+        PYTHONPATH=. python scripts/fact_level_eval/annotate.py
+      deps:
+        - data/predict/${item.dataset}/selfcheckgpt_answers/${item.llm}/selfcheckgpt-original
+        - data/predict/${item.dataset}/fact_text_prompt_answers/${item.llm}/fact_text_prediction_with_inference
+        - data/predict/${item.dataset}/fact_prompt_answers/${item.llm}/fact_prediction_with_inference
+        - data/graphs/${item.dataset}/sentence/restricted/response_column/response_sentences_column/${item.llm}
+      outs:
+        - data/fact_level_eval/annotation/${item.dataset}/${item.llm}
+
+  generate_activations:
+    foreach:
+      - dataset: wiki_bio
+        llm: Llama-3.1-70B-Instruct
+      - dataset: fava-sampling
+        llm: Llama-3.1-70B-Instruct
+    do:
+      cmd: >
+        PYTHONPATH=. python scripts/baselines/generate_activations.py
+        dataset=${item.dataset}
+        llm=local/${item.llm}
+      outs:
+        -  data/baselines/attention_score/${item.dataset}/${item.llm}
+
+  eval_attention_score:
+    foreach:
+      - dataset: wiki_bio
+        llm: Llama-3.1-70B-Instruct
+      - dataset: fava-sampling
+        llm: Llama-3.1-70B-Instruct
+    do:
+      cmd: >
+        PYTHONPATH=. python scripts/baselines/eval_attention_score.py
+        dataset=${item.dataset}
+      deps:
+        - data/baselines/attention_score/${item.dataset}/${item.llm}
+      outs:
+        - data/baselines/attention_score/${item.dataset}/results.json:
+            cache: false
+
+  ### === FAVA === ###
+  generate_samples_from_chatgpt:
+    cmd: >
+      PYTHONPATH=. python scripts/fava/generate_samples_chatgpt.py
+      --save-dir data/fava/
+    outs:
+      - data/fava/chatgpt/results.json
+      - data/fava/chatgpt/config.yaml
+
+  generate_samples_from_llama:
+    cmd: >
+      PYTHONPATH=. python scripts/fava/generate_samples_llama.py
+      --save-dir data/fava/
+    outs:
+      - data/fava/llama/results.json
+      - data/fava/llama/config.yaml
+
+  merge_fava_samples:
+    cmd: >
+      PYTHONPATH=. python scripts/fava/merge_samples.py
+      data/fava/chatgpt/results.json
+      data/fava/llama/results.json
+      --output-file data/fava/fava_with_samples.json
+    deps:
+      - data/fava/chatgpt/results.json
+      - data/fava/llama/results.json
+    outs:
+      - data/fava/fava_with_samples.json
+
+  create_fava_dataset:
+    cmd: >
+      PYTHONPATH=. python scripts/fava/create_dataset.py
+      --input-file data/fava/fava_with_samples.json
+      --output-file data/fava-sampling/
+    deps:
+      - data/fava/fava_with_samples.json
+    outs:
+      - data/fava-sampling/

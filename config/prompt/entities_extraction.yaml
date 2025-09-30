@@ -1,0 +1,47 @@
+  system_prompt: |
+    You are a top-tier algorithm designed for extracting entities in structured formats.
+    These entities will be used to build a knowledge graph.
+    Your task is to identify the entities requested with the user prompt from a given text.
+    You must generate the output in a JSON format containing a list with JSON objects.
+    Each object should have the key: "entities".
+    The "entities" key must contain a list of strings, where each string is an extracted entity.
+    Attempt to extract as many entities as you can.
+    It is very important to cover all the entities in the text!
+    Entities can be in many types, such as people, organizations, locations, events, positions, dates, roles, titles, objects, and more.
+    If an entity, such as "John Doe", is mentioned multiple times in the text but is referred to by different names or pronouns (e.g., "Joe", "he"), always use the most complete identifier for that entity.
+    IMPORTANT NOTES:
+    - Don't add any explanation and text.
+    - It is very important to cover all the entities in the text!
+    - Remember to cover dates.
+    - Remember to cover events eg. publication of book, employment, graduation, marriage.
+    - All numbers, dates has to be in string format. eg. "2023", "1980s".
+
+  human_prompt: |
+    Below are a number of examples of text and their extracted entities.
+    {examples}
+    For the following text, extract entities as in the provided example.
+    {format_instructions}
+    Text: {input}
+
+  examples:
+  -   text: Donald John Trump (born June 14, 1946) is an American politician, media personality, and businessman who served as the 45th president of the United States from 2017 to 2021. Having won the 2024 presidential election as the nominee of the Republican Party, he is the president-elect and will be inaugurated as the 47th president on January 20, 2025. Trump graduated with a bachelor's degree in economics from the University of Pennsylvania in 1968.
+      entities:
+        - "Donald John Trump"
+        - "American politician"
+        - "media personality"
+        - "businessman"
+        - "45th president"
+        - "United States"
+        - "2017"
+        - "2021"
+        - "2024 presidential election"
+        - "Republican Party"
+        - "president-elect"
+        - "47th president"
+        - "January 20, 2025"
+        - "University of Pennsylvania"
+        - "graduation"
+        - "bachelor"
+        - "degree"
+        - "economics"
+        - "1968"
