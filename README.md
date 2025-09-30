@@ -1,8 +1,6 @@
 # FactSelfCheck
 
-This repository contains the code used in the research paper titled
-[**"FactSelfCheck: Fact-Level Black-Box Hallucination Detection for LLMs"**](https://arxiv.org/abs/2503.17229)
-authored by Albert Sawczyn, Jakub Binkowski, Denis Janiak, Bogdan Gabrys, Tomasz Kajdanowicz.
+This repository contains the code used in the research paper titled [**"FactSelfCheck: Fact-Level Black-Box Hallucination Detection for LLMs"**](https://arxiv.org/abs/2503.17229) authored by Albert Sawczyn, Jakub Binkowski, Denis Janiak, Bogdan Gabrys, Tomasz Kajdanowicz.
 
 ## Citation
 
@@ -10,13 +8,13 @@ If you use this repository in your work, please cite it as follows:
 
 ```bibtex
 @misc{sawczyn2025factselfcheckfactlevelblackboxhallucination,
-      title={FactSelfCheck: Fact-Level Black-Box Hallucination Detection for LLMs}, 
+      title={FactSelfCheck: Fact-Level Black-Box Hallucination Detection for LLMs},
       author={Albert Sawczyn and Jakub Binkowski and Denis Janiak and Bogdan Gabrys and Tomasz Kajdanowicz},
       year={2025},
       eprint={2503.17229},
       archivePrefix={arXiv},
       primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2503.17229}, 
+      url={https://arxiv.org/abs/2503.17229},
 }
 ```
 
