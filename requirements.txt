@@ -27,3 +27,6 @@ ipywidgets==8.1.5
 pre-commit==3.8.0
 mypy==1.16.0
 pytest==8.3.4
+
+# New dependencies for prompt evaluation pipeline
+python-dotenv==1.0.0
