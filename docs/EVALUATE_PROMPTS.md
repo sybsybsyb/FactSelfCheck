@@ -1,49 +1,42 @@
-# 使用说明：基于自定义 LLM 地址的批量提示评估
+# 使用说明：基于自定义 LLM 地址的批量提示评估（.env 配置）
 
-这个文档说明了如何在仓库中使用新增脚本，通过自定义 LLM 地址/Key/Model 对一组提示进行评估并将结果写入 CSV，支持断点续跑和增量保存。
+已更新：现在脚本会优先读取项目根目录或当前工作目录下的 `.env` 文件（如果安装了 `python-dotenv`），并从环境变量中加载配置。你可以仍然通过命令行参数覆盖这些设置，但默认无需传参即可运行。
 
-文件：
-- scripts/llm_client.py — 轻量级 LLM 客户端，支持 OpenAI 风格 chat/completions 和通用 prompt 接口
-- scripts/evaluate_prompts.py — 主运行脚本，读取 prompts CSV、调用 LLM、将结果增量写入输出 CSV
+新增依赖（可选但推荐）：
+- python-dotenv — 用于从 .env 文件加载环境变量
 
-依赖：
-- python >= 3.8
-- pandas
-- requests
-- tqdm
+安装：
 
-安装示例：
+pip install pandas requests tqdm python-dotenv
 
-pip install pandas requests tqdm
+示例 .env（放在仓库根目录或运行目录）：
 
-运行示例：
+PROMPTS_CSV=prompts.csv
+PROMPT_COL=prompt
+OUTPUT_CSV=results.csv
+DELIMITER=,
+ENDPOINT=https://api.openai.com/v1/chat/completions
+API_KEY=sk-...
+MODEL=gpt-4o
+CHECKPOINT_INTERVAL=5
+TEMPERATURE=0.0
+MAX_TOKENS=
+MAX_RETRIES=3
+BACKOFF=1.0
+SYSTEM_PROMPT=
+START_INDEX=
 
-python scripts/evaluate_prompts.py \
-  --prompts_csv prompts.csv \
-  --prompt_col prompt \
-  --output_csv results.csv \
-  --endpoint https://api.openai.com/v1/chat/completions \
-  --api_key sk-... \
-  --model gpt-4o \
-  --checkpoint_interval 5
+说明：
+- 脚本会按以下优先级读取配置：命令行参数 > 环境变量（.env-loaded） > 内置默认值
+- 如果没有在任何位置配置 `ENDPOINT`，脚本会退出并显示错误；请把你的 LLM endpoint 写入 .env 的 ENDPOINT 项。
+- 对于 API key，脚本支持从下列环境变量读取（优先级按顺序）： API_KEY, LLM_API_KEY, OPENAI_API_KEY
 
-主要参数：
-- --prompts_csv: 输入的提示文件（CSV）
-- --prompt_col: CSV 中的提示列名，默认 `prompt`
-- --output_csv: 输出结果 CSV，脚本会以追加模式写入，支持断点续跑
-- --endpoint: LLM 的完整 URL（必须包含协议）
-- --api_key: 可选，放在 Authorization: Bearer <key> 中
-- --model: 要发送给 LLM 的模型名字（可选）
-- --checkpoint_interval: 每多少条写一次（脚本每条也会追加写入以防丢失）
+运行：
 
-断点续跑：
-- 如果 output_csv 已存在并包含 prompt_index 列，脚本会跳过已处理的提示
+python scripts/evaluate_prompts.py
 
-信号处理：
-- 脚本安装了 SIGINT/SIGTERM 处理，会在收到中断时尽快退出并保留已写入的数据
+或者（覆盖 .env 中的配置）：
 
-扩展建议：
-- 将 evaluate_prompts.py 中对模型返回的解析替换为项目内的评估逻辑（例如 FactSelfCheck 的打分函数），只需在获取 `text` 后调用评分函数并把分数加入输出即可
-- 支持流式响应或并发批处理以提升吞吐
-- 支持更多认证方式（例如 X-API-Key、自定义 header）
+python scripts/evaluate_prompts.py --prompts_csv other_prompts.csv --endpoint https://...
 
+其它说明与之前相同：脚本逐行追加输出 CSV、支持断点续跑、捕获 SIGINT/SIGTERM 以保留已写入数据、支持将 FactSelfCheck 的评分函数集成到 response 后进行评估并写入额外列。
