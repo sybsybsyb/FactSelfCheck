@@ -185,13 +185,83 @@ def build_knowledge_graphs(
     return graphs
 
 
+def compute_hallucination_scores(
+    graphs: list[Graph],
+    predictor: FactOccurrencePredictor,
+) -> dict[str, Any]:
+    """
+    Compute hallucination scores for all facts across all graphs.
+
+    Args:
+        graphs: List of knowledge graphs
+        predictor: FactOccurrencePredictor instance
+
+    Returns:
+        Dictionary containing detailed scores and statistics
+    """
+    if not graphs:
+        return {
+            "fact_scores": [],
+            "mean_score": 0.0,
+            "median_score": 0.0,
+            "std_score": 0.0,
+            "min_score": 0.0,
+            "max_score": 0.0,
+            "total_facts": 0,
+        }
+
+    all_scores = []
+    fact_details = []
+
+    # Extract all facts and compute scores
+    for graph_idx, graph in enumerate(graphs):
+        for fact_idx, fact in enumerate(graph.triples):
+            try:
+                score = predictor.predict(fact, graphs)
+                all_scores.append(score)
+                fact_details.append({
+                    "graph_idx": graph_idx,
+                    "fact": fact.to_str(),
+                    "score": score,
+                })
+            except Exception as e:
+                logger.warning(f"Failed to compute score for fact {fact.to_str()}: {e}")
+                continue
+
+    if not all_scores:
+        return {
+            "fact_scores": [],
+            "mean_score": 0.0,
+            "median_score": 0.0,
+            "std_score": 0.0,
+            "min_score": 0.0,
+            "max_score": 0.0,
+            "total_facts": 0,
+        }
+
+    scores_array = np.array(all_scores)
+
+    return {
+        "fact_scores": all_scores,  # 所有事实的分数
+        "fact_details": fact_details,  # 每个事实的详细信息
+        "mean_score": float(np.mean(scores_array)),  # 平均幻觉分数
+        "median_score": float(np.median(scores_array)),  # 中位数
+        "std_score": float(np.std(scores_array)),  # 标准差
+        "min_score": float(np.min(scores_array)),  # 最小值 (最不像幻觉)
+        "max_score": float(np.max(scores_array)),  # 最大值 (最像幻觉)
+        "total_facts": len(all_scores),  # 总事实数
+        "high_hallucination_count": int(np.sum(scores_array > 0.7)),  # 高幻觉数 (>0.7)
+        "low_hallucination_count": int(np.sum(scores_array < 0.3)),  # 低幻觉数 (<0.3)
+    }
+
+
 def evaluate_hallucinations(
     prompt: str,
     samples: list[str],
     config: EvaluationConfig,
 ) -> dict[str, Any]:
     """
-    Evaluate hallucinations for a prompt using the FactSelfCheck framework.
+    Comprehensive hallucination evaluation using FactSelfCheck framework.
 
     Args:
         prompt: The original prompt
@@ -199,9 +269,10 @@ def evaluate_hallucinations(
         config: EvaluationConfig instance
 
     Returns:
-        Dictionary containing evaluation results
+        Dictionary containing detailed evaluation results and scores
     """
     result = {
+        "prompt": prompt,
         "num_samples": len(samples),
         "timestamp": pd.Timestamp.now().isoformat(),
     }
@@ -209,31 +280,66 @@ def evaluate_hallucinations(
     if not samples:
         logger.warning(f"No samples to evaluate for prompt: {prompt[:50]}")
         result["error"] = "No samples generated"
+        result["status"] = "failed"
+        result["hallucination_score"] = None
         return result
 
-    # For now, we'll return basic metrics
-    # In a full implementation, this would integrate with the FactSelfCheck framework
     try:
-        # Build knowledge graphs from samples
+        # Create LLM client
         llm = create_llm_client(config)
+
+        # Build knowledge graphs from samples
         graphs = build_knowledge_graphs(llm, samples)
         result["num_graphs_built"] = len(graphs)
+
+        if not graphs:
+            logger.warning(f"No knowledge graphs built for prompt: {prompt[:50]}")
+            result["error"] = "Failed to build knowledge graphs"
+            result["status"] = "failed"
+            result["hallucination_score"] = None
+            return result
+
+        # Initialize FactOccurrencePredictor
+        # This predictor scores facts based on their frequency across samples
+        # High score = low frequency = likely hallucination
+        # Low score = high frequency = likely factual
+        predictor = FactOccurrencePredictor()
+
+        # Compute hallucination scores for all facts
+        score_results = compute_hallucination_scores(graphs, predictor)
+
+        # Add score results to output
+        result.update(score_results)
+
+        # 计算最终综合幻觉分数 (0-1)
+        # 使用平均分数作为该提示词的总体幻觉评分
+        result["hallucination_score"] = score_results["mean_score"]
+
         result["status"] = "success"
+        logger.debug(
+            f"Hallucination evaluation completed. "
+            f"Mean score: {score_results['mean_score']:.4f}, "
+            f"Total facts: {score_results['total_facts']}"
+        )
 
     except Exception as e:
-        logger.error(f"Error during evaluation: {e}")
+        logger.error(f"Error during hallucination evaluation: {e}")
         result["error"] = str(e)
         result["status"] = "failed"
+        result["hallucination_score"] = None
 
     return result
 
 
-def process_prompts(config: EvaluationConfig) -> None:
+def process_prompts(config: EvaluationConfig) -> dict[str, float]:
     """
     Main processing function that evaluates prompts from CSV.
 
     Args:
         config: EvaluationConfig instance
+
+    Returns:
+        Dictionary with summary statistics
     """
     logger.info("=" * 80)
     logger.info("Starting Prompt Evaluation Pipeline")
@@ -249,6 +355,10 @@ def process_prompts(config: EvaluationConfig) -> None:
     llm = create_llm_client(config)
 
     # Initialize CSV handler
+    all_hallucination_scores = []
+    successful_evaluations = 0
+    failed_evaluations = 0
+
     with CSVHandler(
         input_path=config.input_csv_path,
         output_path=config.output_csv_path,
@@ -259,7 +369,12 @@ def process_prompts(config: EvaluationConfig) -> None:
 
         if not unprocessed_prompts:
             logger.info("All prompts have been processed!")
-            return
+            return {
+                "total_prompts": 0,
+                "successful": 0,
+                "failed": 0,
+                "overall_hallucination_score": None,
+            }
 
         # Process each prompt
         progress_bar = tqdm(
@@ -276,28 +391,60 @@ def process_prompts(config: EvaluationConfig) -> None:
                 # Evaluate hallucinations
                 result = evaluate_hallucinations(prompt, samples, config)
 
+                # Track scores for final statistics
+                if result["status"] == "success" and result.get("hallucination_score") is not None:
+                    all_hallucination_scores.append(result["hallucination_score"])
+                    successful_evaluations += 1
+                else:
+                    failed_evaluations += 1
+
                 # Add to CSV
                 result_formatted = ResultFormatter.flatten_result(result)
                 csv_handler.add_result(prompt, result_formatted)
 
-                progress_bar.set_postfix({"status": result.get("status", "unknown")})
+                progress_bar.set_postfix({
+                    "status": result.get("status", "unknown"),
+                    "score": f"{result.get('hallucination_score', 'N/A'):.3f}" if result.get("hallucination_score") is not None else "N/A",
+                })
 
             except Exception as e:
                 logger.error(f"Failed to process prompt '{prompt[:50]}...': {e}")
                 error_result = {
+                    "prompt": prompt,
                     "error": str(e),
                     "status": "failed",
+                    "hallucination_score": None,
                 }
                 csv_handler.add_result(prompt, error_result)
+                failed_evaluations += 1
                 continue
 
         # Save any remaining data
         csv_handler.save()
 
+    # Calculate overall statistics
+    overall_hallucination_score = None
+    if all_hallucination_scores:
+        overall_hallucination_score = float(np.mean(all_hallucination_scores))
+
+    summary = {
+        "total_prompts": len(unprocessed_prompts),
+        "successful": successful_evaluations,
+        "failed": failed_evaluations,
+        "overall_hallucination_score": overall_hallucination_score,
+        "std_hallucination_score": float(np.std(all_hallucination_scores)) if all_hallucination_scores else None,
+    }
+
     logger.info("=" * 80)
     logger.info("Evaluation Pipeline Completed")
     logger.info("=" * 80)
+    logger.info(f"Total prompts processed: {summary['total_prompts']}")
+    logger.info(f"Successful evaluations: {summary['successful']}")
+    logger.info(f"Failed evaluations: {summary['failed']}")
+    logger.info(f"Overall hallucination score: {summary['overall_hallucination_score']:.4f}" if summary['overall_hallucination_score'] is not None else "N/A")
     logger.info(f"Results saved to: {config.output_csv_path}")
+
+    return summary
 
 
 def main() -> None:
@@ -314,9 +461,10 @@ def main() -> None:
         logger.debug(f"Config: {config}")
 
         # Run evaluation pipeline
-        process_prompts(config)
+        summary = process_prompts(config)
 
         logger.info("Pipeline finished successfully")
+        logger.info(f"Summary: {summary}")
         sys.exit(0)
 
     except FileNotFoundError as e:
