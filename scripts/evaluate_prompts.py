@@ -1,29 +1,23 @@
 """
 evaluate_prompts.py
 
-This version loads configuration from a .env file (if present) and from environment variables.
-You can still override any setting via command-line arguments, but the script now runs with
-no CLI parameters required as long as the required settings are present in .env or the environment.
+This variant integrates with the repository's FactSelfCheck evaluation pipeline.
+It expects the input prompts CSV to contain fact triples as columns: `head`, `relation`, `tail`.
+It will construct a Triple from those columns, call the project's FactTextPromptAgent to get
+LLM-based answers for provided sample contexts and then use the FactTextPromptPredictor to
+compute a score. Only the framework's results (score & details) are written to the output CSV —
+the raw LLM response is not saved.
 
-Example .env (place in repository root or current working dir):
+Input CSV requirements (per-row):
+- head, relation, tail : the fact triple components (strings)
+- samples (optional): JSON array (string) of sample context texts to use for the prompt-style evaluation
+  e.g. '["context1","context2"]'
 
-PROMPTS_CSV=prompts.csv
-PROMPT_COL=prompt
-OUTPUT_CSV=results.csv
-DELIMITER=,
-ENDPOINT=https://api.openai.com/v1/chat/completions
-API_KEY=sk-...
-MODEL=gpt-4o
-CHECKPOINT_INTERVAL=5
-TEMPERATURE=0.0
-MAX_TOKENS=
-MAX_RETRIES=3
-BACKOFF=1.0
-SYSTEM_PROMPT=
-START_INDEX=
+If `samples` is missing or empty for a row, the script will skip scoring and write an appropriate note.
 
-Dependencies (add): python-dotenv
-pip install python-dotenv
+Configuration is loaded from .env / environment variables (see docs/EVALUATE_PROMPTS.md).
+New env var (optional): FACT_CFG — path to the Hydra config to use to construct the FactTextPromptAgent
+(default: config/predict_text_prompt.yaml)
 
 Run:
   python scripts/evaluate_prompts.py
@@ -37,13 +31,16 @@ import os
 import signal
 import sys
 import threading
-import time
 from typing import Optional
 
 import pandas as pd
+from omegaconf import OmegaConf
 from tqdm import tqdm
 
-from scripts.llm_client import LLMClient
+# imports from the project
+from hallucinations_kg.models.predictor import Triple, Graph
+from hallucinations_kg.models.prompt_predictor import FactTextPromptPredictor
+from scripts.fact_text_prompt_answers import get_agent
 
 # try to load .env if python-dotenv is installed
 try:
@@ -51,7 +48,6 @@ try:
 
     load_dotenv()
 except Exception:
-    # no-op if dotenv not installed; env vars may still be set in the environment
     pass
 
 stop_requested = False
@@ -71,53 +67,25 @@ signal.signal(signal.SIGTERM, request_stop)
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--prompts_csv", help="CSV file with prompts")
-    p.add_argument("--prompt_col", default=None, help="Column name that contains the prompt text")
     p.add_argument("--output_csv", default=None, help="CSV file to append results to")
-    p.add_argument("--delimiter", default=None, help="CSV delimiter for prompts file")
-    p.add_argument("--endpoint", help="LLM endpoint URL (e.g. https://api.openai.com/v1/chat/completions)")
-    p.add_argument("--api_key", default=None, help="API key for the LLM endpoint")
-    p.add_argument("--model", default=None, help="Model name to send in payload")
-    p.add_argument("--checkpoint_interval", type=int, default=None, help="Save to CSV every N results")
-    p.add_argument("--temperature", type=float, default=None)
-    p.add_argument("--max_tokens", type=int, default=None)
-    p.add_argument("--max_retries", type=int, default=None)
-    p.add_argument("--backoff", type=float, default=None)
-    p.add_argument("--system_prompt", default=None)
-    p.add_argument("--start_index", type=int, default=None, help="Force start index (overrides resume)")
+    p.add_argument("--fact_cfg", default=None, help="Path to config YAML used to build FactTextPromptAgent")
     return p.parse_args()
 
 
-def env_get_int(name: str, default: Optional[int] = None) -> Optional[int]:
-    v = os.getenv(name)
-    if v is None or v == "":
-        return default
+def json_safe(obj):
     try:
-        return int(v)
+        return json.dumps(obj, ensure_ascii=False)
     except Exception:
-        return default
+        return ""
 
 
-def env_get_float(name: str, default: Optional[float] = None) -> Optional[float]:
-    v = os.getenv(name)
-    if v is None or v == "":
-        return default
-    try:
-        return float(v)
-    except Exception:
-        return default
-
-
-def env_get_str(name: str, default: Optional[str] = None) -> Optional[str]:
-    v = os.getenv(name)
-    if v is None or v == "":
-        return default
-    return v
-
-
-def load_prompts(path: str, prompt_col: str, delimiter: str = ","):
+def load_prompts(path: str, delimiter: str = ","):
     df = pd.read_csv(path, delimiter=delimiter, dtype=str, keep_default_na=False)
-    if prompt_col not in df.columns:
-        raise ValueError(f"Column {prompt_col} not found in {path}. Columns: {df.columns.tolist()}")
+    # require triple columns
+    required = ["head", "relation", "tail"]
+    for c in required:
+        if c not in df.columns:
+            raise ValueError(f"Required column '{c}' not found in {path}. Columns: {df.columns.tolist()}")
     df = df.reset_index().rename(columns={"index": "prompt_index"})
     return df
 
@@ -135,80 +103,46 @@ def append_row(path: str, row: list):
         writer.writerow(row)
 
 
-def json_safe(obj):
-    try:
-        return json.dumps(obj, ensure_ascii=False)
-    except Exception:
-        return ""
-
-
 def main():
-    # load configuration from environment (possibly from .env) and CLI args (CLI overrides env)
     args = parse_args()
 
-    # environment values (strings)
-    env_prompts_csv = env_get_str("PROMPTS_CSV")
-    env_prompt_col = env_get_str("PROMPT_COL")
-    env_output_csv = env_get_str("OUTPUT_CSV")
-    env_delimiter = env_get_str("DELIMITER")
-    env_endpoint = env_get_str("ENDPOINT")
-    # accept multiple common names for API key
-    env_api_key = env_get_str("API_KEY") or env_get_str("LLM_API_KEY") or env_get_str("OPENAI_API_KEY")
-    env_model = env_get_str("MODEL")
-    env_checkpoint_interval = env_get_int("CHECKPOINT_INTERVAL")
-    env_temperature = env_get_float("TEMPERATURE")
-    env_max_tokens = env_get_int("MAX_TOKENS")
-    env_max_retries = env_get_int("MAX_RETRIES")
-    env_backoff = env_get_float("BACKOFF")
-    env_system_prompt = env_get_str("SYSTEM_PROMPT")
-    env_start_index = env_get_int("START_INDEX")
-
-    # final values: CLI arg if provided else env else default
-    prompts_csv = args.prompts_csv or env_prompts_csv or "prompts.csv"
-    prompt_col = args.prompt_col or env_prompt_col or "prompt"
-    output_csv = args.output_csv or env_output_csv or "prompt_results.csv"
-    delimiter = args.delimiter or env_delimiter or ","
-    endpoint = args.endpoint or env_endpoint
-    api_key = args.api_key or env_api_key
-    model = args.model or env_model
-    checkpoint_interval = args.checkpoint_interval if args.checkpoint_interval is not None else (env_checkpoint_interval if env_checkpoint_interval is not None else 10)
-    temperature = args.temperature if args.temperature is not None else (env_temperature if env_temperature is not None else 0.0)
-    max_tokens = args.max_tokens if args.max_tokens is not None else env_max_tokens
-    max_retries = args.max_retries if args.max_retries is not None else (env_max_retries if env_max_retries is not None else 3)
-    backoff = args.backoff if args.backoff is not None else (env_backoff if env_backoff is not None else 1.0)
-    system_prompt = args.system_prompt if args.system_prompt is not None else env_system_prompt
-    start_idx = args.start_index if args.start_index is not None else env_start_index if env_start_index is not None else 0
-
-    # endpoint is required; if not provided, show helpful message and exit
-    if not endpoint:
-        print("ERROR: No endpoint configured. Please set ENDPOINT in a .env file or pass --endpoint on the CLI.")
-        sys.exit(2)
+    prompts_csv = args.prompts_csv or os.getenv("PROMPTS_CSV") or "prompts.csv"
+    output_csv = args.output_csv or os.getenv("OUTPUT_CSV") or "fs_results.csv"
+    delimiter = os.getenv("DELIMITER") or ","
+    fact_cfg_path = args.fact_cfg or os.getenv("FACT_CFG") or "config/predict_text_prompt.yaml"
 
     # load prompts
     try:
-        df = load_prompts(prompts_csv, prompt_col, delimiter)
+        df = load_prompts(prompts_csv, delimiter)
     except Exception as e:
         print(f"Failed to load prompts CSV '{prompts_csv}': {e}")
         sys.exit(1)
 
-    client = LLMClient(
-        endpoint=endpoint,
-        api_key=api_key,
-        model=model,
-        timeout=60,
-        max_retries=max_retries,
-        backoff_factor=backoff,
-    )
+    # load config used to construct the agent
+    try:
+        cfg = OmegaConf.load(fact_cfg_path)
+    except Exception as e:
+        print(f"Failed to load config '{fact_cfg_path}': {e}")
+        sys.exit(1)
+
+    # construct FactTextPromptAgent using project's helper
+    try:
+        agent = get_agent(cfg)
+    except Exception as e:
+        print(f"Failed to construct FactTextPromptAgent from config {fact_cfg_path}: {e}")
+        raise
+
+    predictor = FactTextPromptPredictor()
 
     output_cols = [
         "prompt_index",
-        "prompt",
-        "response",
+        "head",
+        "relation",
+        "tail",
+        "fs_score",
+        "fs_details",
         "status",
         "error",
-        "usage",
-        "model",
-        "endpoint",
         "ts",
     ]
 
@@ -223,58 +157,106 @@ def main():
         except Exception:
             processed = set()
 
-    rows_since_checkpoint = 0
-
     for _, row in tqdm(df.iterrows(), total=len(df), desc="prompts"):
         with stop_lock:
             if stop_requested:
                 print("Stop requested. Exiting loop and saving progress.")
                 break
+
         idx = int(row["prompt_index"])
-        if idx < start_idx:
-            continue
         if idx in processed:
             continue
 
-        prompt_text = row[prompt_col]
+        head = row["head"]
+        relation = row["relation"]
+        tail = row["tail"]
 
+        # samples: optional JSON array in 'samples' column
+        samples = []
+        if "samples" in row and row["samples"]:
+            try:
+                samples = json.loads(row["samples"]) if isinstance(row["samples"], str) else row["samples"]
+                if not isinstance(samples, list):
+                    samples = [str(samples)]
+            except Exception:
+                samples = [str(row["samples"])]
+
+        # prepare triple
         try:
-            res = client.generate(
-                prompt_text,
-                system_prompt=system_prompt,
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
-            text = res.get("text")
-            usage = res.get("usage")
-            status = "ok"
-            error = ""
+            triple = Triple(head=head, relation=relation, tail=tail)
         except Exception as e:
-            text = ""
-            usage = ""
-            status = "error"
-            error = repr(e)
+            out_row = [idx, head, relation, tail, "", "", "error", f"Invalid triple: {e}", datetime.datetime.utcnow().isoformat()]
+            append_row(output_csv, out_row)
+            processed.add(idx)
+            continue
 
-        now = datetime.datetime.utcnow().isoformat()
-        out_row = [
-            idx,
-            prompt_text,
-            text,
-            status,
-            error,
-            json_safe(usage),
-            model or "",
-            endpoint,
-            now,
-        ]
+        # if no samples provided, we cannot score with predictor - write note
+        if not samples:
+            out_row = [
+                idx,
+                head,
+                relation,
+                tail,
+                "",
+                json_safe({"error": "no_samples_provided"}),
+                "skipped",
+                "no samples provided",
+                datetime.datetime.utcnow().isoformat(),
+            ]
+            append_row(output_csv, out_row)
+            processed.add(idx)
+            continue
+
+        # call agent to get answers for the triple given samples
+        try:
+            answers = agent.get_answers(triple, samples)
+        except Exception as e:
+            out_row = [
+                idx,
+                head,
+                relation,
+                tail,
+                "",
+                json_safe({"error": repr(e)}),
+                "error",
+                repr(e),
+                datetime.datetime.utcnow().isoformat(),
+            ]
+            append_row(output_csv, out_row)
+            processed.add(idx)
+            continue
+
+        # predictor expects samples_graphs list of Graph with same length as answers; we can pass empty Graphs
+        try:
+            samples_graphs = [Graph(triples=[]) for _ in answers]
+            score = predictor.predict(triple, samples_graphs, answers=answers)
+            details = {"answers": answers}
+            out_row = [
+                idx,
+                head,
+                relation,
+                tail,
+                score,
+                json_safe(details),
+                "ok",
+                "",
+                datetime.datetime.utcnow().isoformat(),
+            ]
+        except Exception as e:
+            out_row = [
+                idx,
+                head,
+                relation,
+                tail,
+                "",
+                json_safe({"error": repr(e), "answers": answers}),
+                "error",
+                repr(e),
+                datetime.datetime.utcnow().isoformat(),
+            ]
 
         append_row(output_csv, out_row)
         processed.add(idx)
-
-        rows_since_checkpoint += 1
-        if rows_since_checkpoint >= checkpoint_interval:
-            rows_since_checkpoint = 0
-            # additional checkpointing logic can be added here
 
     print(f"Finished. Results appended to {output_csv}")
 
